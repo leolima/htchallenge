@@ -1,105 +1,97 @@
 import React from 'react';
+import {View, StyleSheet} from 'react-native';
 import {
-  SafeAreaView,
-  ScrollView,
-  StatusBar,
-  StyleSheet,
-  Text,
-  useColorScheme,
-  View,
-} from 'react-native';
+  Scene,
+  Mesh,
+  MeshBasicMaterial,
+  PerspectiveCamera,
+  ConeGeometry,
+  DodecahedronGeometry,
+  BasicShadowMap,
+  BoxGeometry,
+} from 'three';
+import {Renderer} from 'expo-three';
+import {GLView} from 'expo-gl';
+import {Controls} from './components/Controls';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+const App = () => {
+  const onContextCreate = async gl => {
+    const scene = new Scene();
+    const camera = new PerspectiveCamera(
+      75,
+      gl.drawingBufferWidth / gl.drawingBufferHeight,
+      0.1,
+      1000,
+    );
+    gl.canvas = {
+      width: gl.drawingBufferWidth,
+      height: gl.drawingBufferHeight,
+    };
 
-function Section({children, title}) {
-  const isDarkMode = useColorScheme() === 'dark';
-  return (
-    <View style={styles.sectionContainer}>
-      <Text
-        style={[
-          styles.sectionTitle,
-          {
-            color: isDarkMode ? Colors.white : Colors.black,
-          },
-        ]}>
-        {title}
-      </Text>
-      <Text
-        style={[
-          styles.sectionDescription,
-          {
-            color: isDarkMode ? Colors.light : Colors.dark,
-          },
-        ]}>
-        {children}
-      </Text>
-    </View>
-  );
-}
+    camera.position.z = 7;
 
-function App() {
-  const isDarkMode = useColorScheme() === 'dark';
+    const renderer = new Renderer({gl});
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = BasicShadowMap;
+    renderer.setSize(gl.drawingBufferWidth, gl.drawingBufferHeight);
 
-  const backgroundStyle = {
-    backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
+    // --- Materials --
+    const geometry = new BoxGeometry(1.4, 1.4, 1.4);
+    const material = new MeshBasicMaterial({color: 'red'});
+    const cube = new Mesh(geometry, material);
+    cube.position.y = 3;
+
+    const coneGeo = new ConeGeometry(1, 2);
+    const coneMaterial = new MeshBasicMaterial({color: 'blue'});
+    const cone = new Mesh(coneGeo, coneMaterial);
+    cone.position.y = 0;
+
+    const dodecagonoGeo = new DodecahedronGeometry(1, 0);
+    const dodecagonoMaterial = new MeshBasicMaterial({color: 'green'});
+    const dodecagono = new Mesh(dodecagonoGeo, dodecagonoMaterial);
+    dodecagono.position.y = -3;
+
+    scene.add(cube);
+    scene.add(cone);
+    scene.add(dodecagono);
+
+    const render = () => {
+      requestAnimationFrame(render);
+
+      cube.rotation.x += 0.001;
+      cube.rotation.y += 0.01;
+
+      cone.rotation.x += 0.01;
+      cone.rotation.y += 0.01;
+
+      dodecagono.rotation.x += 0.01;
+      dodecagono.rotation.y += 0.01;
+
+      renderer.render(scene, camera);
+      gl.endFrameEXP();
+    };
+    render();
   };
 
   return (
-    <SafeAreaView style={backgroundStyle}>
-      <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+    <View style={styles.flex}>
+      <GLView
+        onContextCreate={onContextCreate}
+        // set height and width of GLView
+        style={{width: 400, height: 600, borderColor: 'black', borderWidth: 1}}
       />
-      <ScrollView
-        contentInsetAdjustmentBehavior="automatic"
-        style={backgroundStyle}>
-        <Header />
-        <View
-          style={{
-            backgroundColor: isDarkMode ? Colors.black : Colors.white,
-          }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+      <Controls />
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  sectionContainer: {
-    marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-  },
-  highlight: {
-    fontWeight: '700',
+  flex: {
+    display: 'flex',
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    backgroundColor: 'black',
   },
 });
 
