@@ -10,8 +10,13 @@
     "test": "jest"
   },
   "dependencies": {
-    "react": "18.2.0",
-    "react-native": "0.71.3"
+    "expo": "^48.0.0",
+    "expo-gl": "~12.4.0",
+    "expo-three": "^7.0.0",
+    "firebase": "^9.17.1",
+    "react": "^18.0.0-rc.3",
+    "react-native": "0.71.3",
+    "three": "^0.150.1"
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
