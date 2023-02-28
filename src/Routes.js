@@ -6,7 +6,7 @@ import Main from './screens/Main';
 function Routes() {
   const {user} = useContext(FirebaseContext);
 
-  return !user ? <Main /> : <Login />;
+  return user ? <Main /> : <Login />;
 }
 
 export default Routes;
