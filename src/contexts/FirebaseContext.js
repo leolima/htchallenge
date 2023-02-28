@@ -1,21 +1,23 @@
 import React, {useEffect, useCallback, useState} from 'react';
 import {initializeApp} from 'firebase/app';
-import {
-  signInWithEmailAndPassword,
-  getAuth,
-  onAuthStateChanged,
-} from 'firebase/auth';
+import {getDatabase, set, ref, onValue} from 'firebase/database';
+import {signInWithEmailAndPassword, getAuth} from 'firebase/auth';
+import {hashCode} from '../utils/common';
 
 export const FirebaseContext = React.createContext({
   login: () => {},
   loading: false,
   user: undefined,
+  userData: undefined,
+  saveUserData: () => {},
 });
 
 export const FirebaseProvider = ({children}) => {
   const [user, setUser] = useState(null);
+  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [auth, setAuthInstance] = useState(null);
+  const [database, setDatabaseInstance] = useState(null);
 
   const initializeFirebase = useCallback(() => {
     const firebaseConfig = {
@@ -25,38 +27,51 @@ export const FirebaseProvider = ({children}) => {
       storageBucket: 'htchallenge-7d953.appspot.com',
       messagingSenderId: '1072893099350',
       appId: '1:1072893099350:web:8e52a17b68e40bd56eaaf7',
+      databaseURL: 'https://htchallenge-7d953-default-rtdb.firebaseio.com',
     };
-    initializeApp(firebaseConfig);
+    const app = initializeApp(firebaseConfig);
     setAuthInstance(getAuth());
-    console.log('Firebase inicializado');
+    setDatabaseInstance(getDatabase(app));
   }, []);
 
   const login = useCallback(
     async (email, password) => {
       setLoading(true);
       await signInWithEmailAndPassword(auth, email, password)
+        .then(u => u?.user)
         .then(setUser)
-        .catch(console.error);
+        .catch(alert);
       setLoading(false);
     },
     [auth],
   );
 
-  const startListeners = useCallback(() => {
-    if (auth) {
-      onAuthStateChanged(auth, u => {
-        console.log('onAuthStateChanged', {u});
+  const loadUserData = useCallback(() => {
+    if (user && database) {
+      const data = ref(database, `userData/${hashCode(user?.email)}`);
+      onValue(data, snapshot => {
+        const value = snapshot.val();
+        setUserData(value);
       });
     }
-  }, [auth]);
+  }, [user, database]);
+
+  const saveUserData = useCallback(
+    colors => {
+      if (user && database) {
+        set(ref(database, `userData/${hashCode(user?.email)}`), colors);
+      }
+    },
+    [user, database],
+  );
 
   useEffect(() => {
     initializeFirebase();
   }, [initializeFirebase]);
 
   useEffect(() => {
-    startListeners();
-  }, [auth]);
+    loadUserData();
+  }, [user, database]);
 
   return (
     <FirebaseContext.Provider
@@ -64,6 +79,8 @@ export const FirebaseProvider = ({children}) => {
         login,
         loading,
         user,
+        userData,
+        saveUserData,
       }}>
       {children}
     </FirebaseContext.Provider>
